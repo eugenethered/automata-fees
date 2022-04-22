@@ -9,5 +9,5 @@
 ## Requires 
 
 ### Options
-* ACCOUNT_TRADE_FEE
-* {instrument}_TRADE_FEE
+* ACCOUNT_TRADE_FEE_KEY
+* {instrument}_TRADE_FEE_KEY
