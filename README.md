@@ -10,4 +10,4 @@
 
 ### Options
 * ACCOUNT_TRADE_FEE_KEY
-* {instrument}_TRADE_FEE_KEY
+* INSTRUMENT_TRADE_FEE_KEY - format value "{instrument}" to the correct value

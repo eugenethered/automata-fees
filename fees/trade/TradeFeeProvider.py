@@ -20,7 +20,7 @@ class TradeFeeProvider:
         return self.__return_not_available_value(account_fee)
 
     def get_instrument_trade_fee(self, instrument) -> float:
-        fee_key = self.options['{instrument}_TRADE_FEE_KEY'.format(instrument=instrument)]
+        fee_key = self.options['INSTRUMENT_TRADE_FEE_KEY'].format(instrument=instrument)
         instrument_fee = self.cache.fetch(fee_key, as_type=float)
         if instrument_fee is None:
             instrument_fee = self.trade_fee_filter.obtain_instrument_trade_fee(instrument)
