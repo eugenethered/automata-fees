@@ -30,7 +30,8 @@ class TradeFeeProvider:
         account_fee = self.cache.fetch(fee_key, as_type=float)
         if account_fee is None:
             account_fee = self.trade_fee_filter.obtain_account_trade_fee()
-            self.cache.store(fee_key, account_fee)
+            if account_fee is not None:
+                self.cache.store(fee_key, account_fee)
         return self.return_appropriate_value(account_fee, 'account')
 
     def get_instrument_trade_fee(self, instrument) -> float:
@@ -38,7 +39,8 @@ class TradeFeeProvider:
         instrument_fee = self.cache.fetch(fee_key, as_type=float)
         if instrument_fee is None:
             instrument_fee = self.trade_fee_filter.obtain_instrument_trade_fee(instrument)
-            self.cache.store(fee_key, instrument_fee)
+            if instrument_fee is not None:
+                self.cache.store(fee_key, instrument_fee)
         return self.return_appropriate_value(instrument_fee, f'instrument {instrument}')
 
     @staticmethod

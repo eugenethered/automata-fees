@@ -59,7 +59,7 @@ class TradeFeeProviderTestCase(unittest.TestCase):
         result = fee_provider.return_appropriate_value(0.00, 'Instrument')
         self.assertEqual(0.0, result, 'Actual value of 0.0 should be returned')
 
-    def test_should_raise_no_trade_fee_error_when_(self):
+    def test_should_raise_no_trade_fee_error_when_trade_fee_is_none(self):
         with self.assertRaises(NoTradeFeeError) as ntf:
             options = {
                 'ACCOUNT_TRADE_FEE_KEY': 'market:account:trade:key',
