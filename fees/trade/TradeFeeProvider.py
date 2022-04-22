@@ -2,6 +2,7 @@ from cache.holder.RedisCacheHolder import RedisCacheHolder
 from core.constants.not_available import NOT_AVAILABLE
 from core.options.exception.MissingOptionError import MissingOptionError
 
+from fees.trade.exception.NoTradeFeeError import NoTradeFeeError
 from fees.trade.filter.TradeFeeFilter import TradeFeeFilter
 
 ACCOUNT_TRADE_FEE_KEY = 'ACCOUNT_TRADE_FEE_KEY'
@@ -30,7 +31,7 @@ class TradeFeeProvider:
         if account_fee is None:
             account_fee = self.trade_fee_filter.obtain_account_trade_fee()
             self.cache.store(fee_key, account_fee)
-        return self.__return_not_available_value(account_fee)
+        return self.return_appropriate_value(account_fee, 'account')
 
     def get_instrument_trade_fee(self, instrument) -> float:
         fee_key = self.options[INSTRUMENT_TRADE_FEE_KEY].format(instrument=instrument)
@@ -38,8 +39,10 @@ class TradeFeeProvider:
         if instrument_fee is None:
             instrument_fee = self.trade_fee_filter.obtain_instrument_trade_fee(instrument)
             self.cache.store(fee_key, instrument_fee)
-        return self.__return_not_available_value(instrument_fee)
+        return self.return_appropriate_value(instrument_fee, f'instrument {instrument}')
 
     @staticmethod
-    def __return_not_available_value(value):
+    def return_appropriate_value(value, trade_fee_ref):
+        if value is None:
+            raise NoTradeFeeError(f'No trade fee for {trade_fee_ref}')
         return None if value == NOT_AVAILABLE else value
