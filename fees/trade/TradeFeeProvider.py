@@ -1,50 +1,38 @@
-from cache.holder.RedisCacheHolder import RedisCacheHolder
-from core.constants.not_available import NOT_AVAILABLE
-from core.options.exception.MissingOptionError import MissingOptionError
+import logging
 
-from fees.trade.exception.NoTradeFeeError import NoTradeFeeError
+from exchangerepo.repository.InstrumentExchangeRepository import InstrumentExchangeRepository
+from feerepo.repository.account.AccountFeeRepository import AccountFeeRepository
+from feerepo.repository.instrument.InstrumentFeeRepository import InstrumentFeeRepository
+
 from fees.trade.filter.TradeFeeFilter import TradeFeeFilter
-
-ACCOUNT_TRADE_FEE_KEY = 'ACCOUNT_TRADE_FEE_KEY'
-INSTRUMENT_TRADE_FEE_KEY = 'INSTRUMENT_TRADE_FEE_KEY'
 
 
 class TradeFeeProvider:
 
     def __init__(self, options, trade_fee_filter: TradeFeeFilter):
+        self.log = logging.getLogger(__name__)
         self.options = options
-        self.__check_options()
-        self.cache = RedisCacheHolder()
         self.trade_fee_filter = trade_fee_filter
+        self.instrument_exchange_repository = InstrumentExchangeRepository(options)
+        self.account_fee_repository = AccountFeeRepository(options)
+        self.instrument_fee_repository = InstrumentFeeRepository(options)
 
-    def __check_options(self):
-        if self.options is None:
-            raise MissingOptionError(f'missing option please provide options {ACCOUNT_TRADE_FEE_KEY} and {INSTRUMENT_TRADE_FEE_KEY}')
-        if ACCOUNT_TRADE_FEE_KEY not in self.options:
-            raise MissingOptionError(f'missing option please provide option {ACCOUNT_TRADE_FEE_KEY}')
-        if INSTRUMENT_TRADE_FEE_KEY not in self.options:
-            raise MissingOptionError(f'missing option please provide option {INSTRUMENT_TRADE_FEE_KEY}')
+    def obtain_trade_fees(self):
+        self.obtain_account_fees()
+        self.obtain_instrument_account_fees()
 
-    def get_account_trade_fee(self) -> float:
-        fee_key = self.options[ACCOUNT_TRADE_FEE_KEY]
-        account_fee = self.cache.fetch(fee_key, as_type=float)
-        if account_fee is None:
-            account_fee = self.trade_fee_filter.obtain_account_trade_fee()
-            if account_fee is not None:
-                self.cache.store(fee_key, account_fee)
-        return self.return_appropriate_value(account_fee, 'account')
+    def obtain_account_fees(self):
+        fee = self.trade_fee_filter.obtain_account_trade_fee()
+        if fee is not None:
+            self.log.debug(f'Storing account fee:{fee}')
+            self.account_fee_repository.store_account_trade_fee(fee)
 
-    def get_instrument_trade_fee(self, instrument) -> float:
-        fee_key = self.options[INSTRUMENT_TRADE_FEE_KEY].format(instrument=instrument)
-        instrument_fee = self.cache.fetch(fee_key, as_type=float)
-        if instrument_fee is None:
-            instrument_fee = self.trade_fee_filter.obtain_instrument_trade_fee(instrument)
-            if instrument_fee is not None:
-                self.cache.store(fee_key, instrument_fee)
-        return self.return_appropriate_value(instrument_fee, f'instrument {instrument}')
-
-    @staticmethod
-    def return_appropriate_value(value, trade_fee_ref):
-        if value is None:
-            raise NoTradeFeeError(f'No trade fee for {trade_fee_ref}')
-        return None if value == NOT_AVAILABLE else value
+    def obtain_instrument_account_fees(self):
+        instrument_exchanges_holder = self.instrument_exchange_repository.retrieve()
+        instrument_exchanges = instrument_exchanges_holder.get_all()
+        if len(instrument_exchanges) > 0:
+            for instrument_exchange in instrument_exchanges:
+                instrument = instrument_exchange.instrument
+                fee = self.trade_fee_filter.obtain_instrument_trade_fee(instrument)
+                self.log.debug(f'Storing fee:{fee} for [{instrument}]')
+                self.instrument_fee_repository.store_instrument_trade_fee(fee, instrument)
