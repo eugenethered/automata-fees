@@ -8,5 +8,5 @@ class TradeFeeFilter:
     def obtain_account_trade_fee(self) -> Optional[BigFloat]:
         pass
 
-    def obtain_instrument_trade_fee(self, instrument) -> Optional[BigFloat]:
+    def obtain_instrument_trade_fee(self, instrument_exchange) -> Optional[BigFloat]:
         pass

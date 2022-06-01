@@ -19,7 +19,7 @@ class TradeFeeProvider:
 
     def obtain_trade_fees(self):
         self.obtain_account_fees()
-        self.obtain_instrument_account_fees()
+        self.obtain_instrument_fees()
 
     def obtain_account_fees(self):
         fee = self.trade_fee_filter.obtain_account_trade_fee()
@@ -27,12 +27,20 @@ class TradeFeeProvider:
             self.log.debug(f'Storing account fee:{fee}')
             self.account_fee_repository.store_account_trade_fee(fee)
 
-    def obtain_instrument_account_fees(self):
+    def obtain_instrument_fees(self):
         instrument_exchanges_holder = self.instrument_exchange_repository.retrieve()
         instrument_exchanges = instrument_exchanges_holder.get_all()
         if len(instrument_exchanges) > 0:
             for instrument_exchange in instrument_exchanges:
-                instrument = instrument_exchange.instrument
-                fee = self.trade_fee_filter.obtain_instrument_trade_fee(instrument)
-                self.log.debug(f'Storing fee:{fee} for [{instrument}]')
-                self.instrument_fee_repository.store_instrument_trade_fee(fee, instrument)
+                self.obtain_both_sides_of_exchange_fees(instrument_exchange)
+
+    def obtain_both_sides_of_exchange_fees(self, instrument_exchange):
+        self.obtain_and_store_instrument_fee(instrument_exchange)
+        self.obtain_and_store_instrument_fee(instrument_exchange.invert())
+
+    def obtain_and_store_instrument_fee(self, instrument_exchange):
+        fee = self.trade_fee_filter.obtain_instrument_trade_fee(instrument_exchange)
+        if fee is not None:
+            self.log.debug(f'Storing fee:{fee} for [{instrument_exchange}]')
+            self.instrument_fee_repository.store_instrument_trade_fee(fee, instrument_exchange)
+
