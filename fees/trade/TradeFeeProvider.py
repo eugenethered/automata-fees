@@ -38,7 +38,7 @@ class TradeFeeProvider:
         fee = self.trade_fee_filter.obtain_instrument_trade_fee(instrument_exchange)
         inverse_fee = self.trade_fee_filter.obtain_instrument_trade_fee(instrument_exchange.invert())
         self.store_relevant_fee(fee, inverse_fee, instrument_exchange)
-        self.store_relevant_fee(inverse_fee, fee, instrument_exchange)
+        self.store_relevant_fee(inverse_fee, fee, instrument_exchange.invert())
 
     def store_relevant_fee(self, fee, other_fee, instrument_exchange):
         if fee is not None:
