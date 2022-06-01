@@ -35,12 +35,15 @@ class TradeFeeProvider:
                 self.obtain_both_sides_of_exchange_fees(instrument_exchange)
 
     def obtain_both_sides_of_exchange_fees(self, instrument_exchange):
-        self.obtain_and_store_instrument_fee(instrument_exchange)
-        self.obtain_and_store_instrument_fee(instrument_exchange.invert())
-
-    def obtain_and_store_instrument_fee(self, instrument_exchange):
         fee = self.trade_fee_filter.obtain_instrument_trade_fee(instrument_exchange)
+        inverse_fee = self.trade_fee_filter.obtain_instrument_trade_fee(instrument_exchange.invert())
+        self.store_relevant_fee(fee, inverse_fee, instrument_exchange)
+        self.store_relevant_fee(inverse_fee, fee, instrument_exchange)
+
+    def store_relevant_fee(self, fee, other_fee, instrument_exchange):
         if fee is not None:
             self.log.debug(f'Storing fee:{fee} for [{instrument_exchange}]')
             self.instrument_fee_repository.store_instrument_trade_fee(fee, instrument_exchange)
-
+        elif other_fee is not None:
+            self.log.debug(f'Storing fee:{other_fee} for [{instrument_exchange}]')
+            self.instrument_fee_repository.store_instrument_trade_fee(other_fee, instrument_exchange)
